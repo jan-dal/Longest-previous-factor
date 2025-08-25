@@ -7,6 +7,8 @@ occurrence is allowed to overlap with w[i..i + k − 1]).
 
 The LPF table can be then used to calculate the self-referential LZ parse of the input string.
 
+The implementation uses an O(n) suffix array algorithm described here: [Simple Linear Work Suffix Array Construction](https://www.cs.cmu.edu/~guyb/realworld/papersS04/KaSa03.pdf)
+
 ### Example
 Given the string: w[1...28] := `ababbababaaabbababaabaabbbaa`, LPF[13] = 8
 
