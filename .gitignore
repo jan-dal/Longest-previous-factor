@@ -1,3 +1,10 @@
+lpf
+lpf_debug
+compile_commands.json
+.cache/**
+# Test files
+*.txt
+
 # Prerequisites
 *.d
 

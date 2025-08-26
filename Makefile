@@ -1,17 +1,29 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O3
-DFLAGS = -g -O0
+CFLAGS = -Wall -Wextra -O3 -Iinclude
+DFLAGS = -pg -O0 -Iinclude
+
 TARGET = lpf
 DTARGET = lpf_debug
+
 SRC = $(wildcard src/*.c)
+OBJ = $(SRC:.c=.o)
+DOBJ = $(SRC:.c=.d.o)
 
 all: $(TARGET)
 
-debug:
-	$(CC) $(DFLAGS) -o $(DTARGET) $(SRC)
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $(OBJ)
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
+debug: $(DTARGET)
+
+$(DTARGET): $(DOBJ)
+	$(CC) $(DFLAGS) -o $@ $(DOBJ)
+
+src/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+src/%.d.o: src/%.c
+	$(CC) $(DFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(DTARGET) $(OBJ) $(DOBJ)

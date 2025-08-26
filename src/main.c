@@ -15,20 +15,40 @@
 #include <time.h>
 
 void print_help() {
-    printf("Usage: ./lpf [options]\n");
+    printf("Usage: ./lpf [OPTIONS] [PARAMETERS]\n\n");
+
     printf("Options:\n");
-    printf("  -h, --help                                        Display this help message\n");
-    printf("  -l, --lpf                                         Calculate the lpf array\n");
-    printf("  -s, --suffix                                      Calculate the suffix and lcp arrays\n");
-    printf("  -v, --validate [sl][rf] <length> <tries> <asize>  Validate the [sl] agains the naive method <tries> random strings of length <length>\n");
-    printf("  -b, --benchmark [sl][rf] <length> <tries> <asize> Perform a benchmark with a random string[1...<length>], <tries> times\n");
-    printf("Example:\n");
-    printf("  ./PATH/TO/PROGRAM/lpf -b sr 1000000 10 3\n");
-    printf("  ./PATH/TO/PROGRAM/lpf -s\n");
-    printf("In case of fibonacci numbers ('f' argument) <length> means the #fibonnaci word\n");
-    printf("  ./PATH/TO/PROGRAM/lpf -v lf 10 1 2  Validate LPF arrays on the 10th fibonacci word (asize is by definition 2)\n");
-    printf("  ./PATH/TO/PROGRAM/lpf -b sr 10000 10 4  Benchmark suffix arrays on random words of length 10000, 10 times with alphabet size 4.\n");
+    printf("  -h, --help                       Display this help message\n");
+    printf("  -l, --lpf [--no-output]          Calculate the LPF array; --no-output suppresses printing\n");
+    printf("  -s, --suffix [--no-output]       Calculate the suffix and LCP arrays; --no-output suppresses printing\n");
+    printf("  -v, --validate <s|l><r|f> <len> <tries> [<asize>]\n");
+    printf("                                   Validate LPF or suffix arrays against naive (probably correct) method\n");
+    printf("                                   s = suffix array, l = LPF; r = random, f = fibonacci\n");
+    printf("                                   <asize> is required only for random strings\n");
+    printf("  -b, --benchmark <s|l><r|f> <fast|qsort|naive> <len> <tries> [<asize>] [-o <file>]\n");
+    printf("                                   Benchmark LPF or suffix arrays\n");
+    printf("                                   s = suffix array, l = LPF; r = random, f = fibonacci\n");
+    printf("                                   Algorithm options:\n");
+    printf("                                     fast   - benchmark optimized implementation\n");
+    printf("                                     qsort  - benchmark the qsort implementation\n");
+    printf("                                     naive  - benchmark naive implementation\n");
+    printf("                                   <asize> is required only for random strings; -o <file> to save results\n\n");
+
+    printf("Examples:\n");
+    printf("  ./lpf -s\n");
+    printf("      Calculate suffix and LCP arrays\n\n");
+    printf("  ./lpf -l\n");
+    printf("      Calculate LPF array and print to console\n\n");
+    printf("  ./lpf -l --no-output\n");
+    printf("      Calculate LPF array without printing (useful for very large strings)\n\n");
+    printf("  ./lpf -v lf 10 1\n");
+    printf("      Validate LPF arrays on the 10th Fibonacci word (alphabet size implied = 2)\n\n");
+    printf("  ./lpf -v sr 10000 5 4\n");
+    printf("      Validate suffix arrays on random words of length 10000, 5 times, alphabet size 4\n\n");
+    printf("  ./lpf -b sr fast 10000 10 4 -o benchmark.csv\n");
+    printf("      Benchmark suffix arrays on random words of length 10000, 10 times, alphabet size 4, save to file\n");
 }
+
 
 void suffix_array_from_input() { 
     char *input = NULL;

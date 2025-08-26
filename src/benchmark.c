@@ -12,33 +12,34 @@
 #include <string.h>
 
 void validate_lpf(int str_len, int tries, int asize) {
-    printf("Validating lpf arrays %d times with random strings[1...%d], |∑| = %d\n", tries, str_len, asize); 
+    printf("Validating LPF arrays %d times with random strings [1...%d], |Σ| = %d\n", tries, str_len, asize); 
+
     int *str = malloc((str_len + ADDITIONAL_PADDING) * sizeof(int));
-    str = random_str(str, str_len, asize);
-    int *lpf1, *lpf2;
    
     for (int i = 0; i < tries; i++) {
-        lpf1 = lpf_array(str, str_len);
-        lpf2 = lpf_array_naive(str, str_len);
-        for (int k = 0; k < str_len; k++) {
-            if (memcmp(lpf1, lpf2, str_len * sizeof(int))) {
-                printf("FOUND DIFFERENT LPF ARRAYS\n");
-                printf_array(str, str_len);
-                print_lpf_array(str, lpf1, str_len);
-                printf("\n");
-                print_lpf_array(str, lpf2, str_len);
-                
-                free(str);            
-                free(lpf1);
-                free(lpf2);        
-                return;
-            }
+        random_str(str, str_len, asize);
+        int *lpf1 = lpf_array(str, str_len);
+        int *lpf2 = lpf_array_naive(str, str_len);
+
+        if (memcmp(lpf1, lpf2, str_len * sizeof(int)) != 0) {
+            printf("Mismatch found on try %d\n", i + 1);
+            printf("Input string:\n");
+            printf_array(str, str_len);
+            print_lpf_array(str, lpf1, str_len);
+            printf("\n");
+            print_lpf_array(str, lpf2, str_len);
+            
+            free(str);            
+            free(lpf1);
+            free(lpf2);        
+            return;
         }
         free(lpf1);
         free(lpf2);
     }
     free(str);
-    printf("SUCCESS!\n");
+    
+    printf("All %d tries succeeded!\n", tries);
 }
 
 void validate_suffix_array(int str_len, int tries, int asize) {
@@ -157,8 +158,7 @@ void benchmark(int *(*f)(int*, int), int *(*f_naive)(int*, int), data_frame *dat
         }
 
         ssa += timeit(f, str, n);
-        ssaq += timeit(f_naive, str, n);
-        // ssaq += 0;
+        // ssaq += timeit(f_naive, str, n);
     }
     free(str);
 
@@ -179,9 +179,12 @@ void benchmark(int *(*f)(int*, int), int *(*f_naive)(int*, int), data_frame *dat
 }
 
 double timeit(int *(*f)(int*, int), int *str, int str_len) {
-    clock_t start = clock();
-    int *sa = f(str, str_len);
-    double seconds = (double)(clock() - start) / CLOCKS_PER_SEC;
-    free(sa);
+    struct timespec start, end;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    int *arr = f(str, str_len);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double seconds = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    free(arr);
     return seconds;
 }
