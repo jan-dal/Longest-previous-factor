@@ -13,6 +13,8 @@ void write_to_csv(data_frame *data, FILE *file);
 void cleanup_data(data_frame *data);
 int *random_str(int *str, int str_len, int asize);
 int *fib_str(int *str, int n);
+int find_prev(int *str, int i, int k);
+int read_array_from_stdin(int **str, int no_output);
 int fibonacci(int n);
 data_frame *create_data_frame(int datapoints, char *filename, char *header);
 

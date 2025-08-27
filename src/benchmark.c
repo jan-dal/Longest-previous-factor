@@ -38,7 +38,7 @@ void validate_lpf(int str_len, int tries, int asize) {
         free(lpf2);
     }
     free(str);
-    
+
     printf("All %d tries succeeded!\n", tries);
 }
 
@@ -79,112 +79,99 @@ void validate_suffix_array(int str_len, int tries, int asize) {
     printf("SUCCESS!\n");
 }
 
-void benchmark_runner(Algorithm alg, StrType str_type, int str_len, int tries, int asize) {
+void benchmark_runner(Options config) {
     int *(*f)(int*, int);
-    int *(*f_naive)(int*, int);
     FILE *file;
     char *filename, *header = TIME_BENCHMARK_HEADER;
 
-    switch (alg) {
+    switch (config.alg) {
         case SUFFIX_ARRAY:
-            printf("Running benchmark on suffix arrays %d times with random strings[1...%d], |∑| = %d\n", tries, str_len, asize); 
-            f = suffix_array, f_naive = suffix_array_qsort; 
+            printf("Running benchmark on suffix arrays %d times with random strings[1...%d], |∑| = %d\n", 
+                config.tries, config.size, config.asize); 
             filename = SA_BENCH_FILENAME;
+
+            if (config.alg_impl == FAST) {
+                f = suffix_array;
+            } else if (config.alg_impl == QSORT) {
+                f = suffix_array_qsort;
+            } else {
+                f = suffix_array;
+            }
             break;
-        case LCP:
-            printf("Running benchmark on lcp arrays %d times with random strings[1...%d], |∑| = %d\n", tries, str_len, asize); 
-            return;
         case LPF:
-            printf("Running benchmark on lpf arrays %d times with random strings[1...%d], |∑| = %d\n", tries, str_len, asize); 
-            f = lpf_array, f_naive = lpf_array_naive;
             filename = LPF_BENCH_FILENAME;
+
+            if (config.alg_impl == FAST) {
+                f = lpf_array;
+            } else if (config.alg_impl == NAIVE) {
+                f = lpf_array_naive;
+            } else {
+                f = lpf_array;
+            }
             break;
-        default:
-            return; 
     }
+
+    int datapoints = 28;
+    data_frame *data = create_data_frame(datapoints, filename, header);
+
+    benchmark(f, data, config, 0);
 
     file = fopen(filename, "a");
 
     if (file == NULL) {
         perror("Error opening file");
     }
-
-    int datapoints = 28;
-    data_frame *data = create_data_frame(datapoints, filename, header);
-
-    // for (int i = 0; i < datapoints; i++) {
-    //     // str_len = (2 << i) + (2 << (i-1));
-    //     // str_len = (2 << i);
-    //     str_len = i+2;
-    //     printf("String length: %d\n", str_len);
-    //     benchmark(f, f_naive, data, str_type, str_len, tries, asize, i);
-    //     printf("\n");
-    // }
-
-    if (str_type == FIBONACCI) {
-        benchmark(f, f_naive, data, str_type,  str_len, tries, asize, 0);
-    } else {
-        benchmark(f, f_naive, data, str_type, str_len, tries, asize, 0);
-    }
-
-
-
     // write_to_csv(data, file);
     cleanup_data(data);
     fclose(file); 
 }
 
-void benchmark(int *(*f)(int*, int), int *(*f_naive)(int*, int), data_frame *data, StrType str_type, int str_len, int tries, int asize, int datapoint) {
-    double ssa = 0, ssaq = 0;
-    long long nssa = 0, nssaq = 0;
+void benchmark(int *(*f)(int*, int), data_frame *data, Options config, int datapoint) {
+    long long nano = 0;
+    double seconds = 0;
     int *str = NULL;
-    int n = 0;
 
-    for (int i = 0; i < tries; i++) {
-        switch (str_type) {
-            case RANDOM:
-                str = random_str(str, str_len, asize);
-                n = str_len;
-                break;
-            case FIBONACCI:
-                str = fib_str(str, str_len);
-                n = fibonacci(str_len);
-                asize = 2;
-                break;
-            default:
-                str = random_str(str, str_len, asize);
-                n = str_len;
-                break;
+    switch (config.str_type) {
+        case FIBONACCI:
+            str = fib_str(str, config.size);
+            config.size = fibonacci(config.size);
+            config.asize = 2;
+            printf("Running benchmark on lpf arrays %d times with fibonacci strings[1...%d], |∑| = %d\n", 
+                    config.tries, config.size, config.asize);
+            break;
+        case RANDOM:
+            printf("Running benchmark on lpf arrays %d times with random strings[1...%d], |∑| = %d\n", 
+                config.tries, config.size, config.asize); 
+            break;
+    }   
+
+    for (int i = 0; i < config.tries; i++) {
+        if (config.str_type == RANDOM) {
+            str = random_str(str, config.size, config.asize);
         }
-
-        ssa += timeit(f, str, n);
-        // ssaq += timeit(f_naive, str, n);
+        nano += timeit(f, str, config.size);
     }
     free(str);
 
-    ssa /= tries;
-    ssaq /= tries;
-    nssa = SEC_TO_NANO(ssa);
-    nssaq = SEC_TO_NANO(ssaq);
+    nano /= config.tries;
+    seconds = NANO_TO_SEC(nano);
 
-    data->data[datapoint][0] = n;
-    data->data[datapoint][1] = str_type;
-    data->data[datapoint][2] = tries;
-    data->data[datapoint][3] = asize;
-    data->data[datapoint][4] = nssa;
-    data->data[datapoint][5] = nssaq;
+    data->data[datapoint][0] = config.size;
+    data->data[datapoint][1] = config.str_type;
+    data->data[datapoint][2] = config.tries;
+    data->data[datapoint][3] = config.asize;
+    data->data[datapoint][4] = nano;
     
-    printf("Alg1: %lld ns per call (%f seconds), total: %f seconds\n", nssa, ssa, ssa * tries);
-    printf("Alg2: %lld ns per call (%f seconds), total: %f seconds\n", nssaq, ssaq, ssaq * tries);
+    printf("%lld ns per call (%f seconds), total: %f seconds\n", nano, seconds, seconds * config.tries);
 }
 
-double timeit(int *(*f)(int*, int), int *str, int str_len) {
+long long timeit(int *(*f)(int*, int), int *str, int str_len) {
     struct timespec start, end;
 
     clock_gettime(CLOCK_MONOTONIC, &start);
     int *arr = f(str, str_len);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    double seconds = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    long nano = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
     free(arr);
-    return seconds;
+    return nano;
 }

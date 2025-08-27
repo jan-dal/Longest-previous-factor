@@ -5,206 +5,194 @@
 #include "constants.h"
 #include "benchmark.h"
 #include "suffix_array.h"
-#include "suffix_array_qsort.h"
 
+#include <bits/getopt_core.h>
 #include <getopt.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
+static const char *short_opts = "ihbsvl";
+static const struct option long_opts[] = {
+    {"help",    no_argument,       NULL, OPT_HELP},
+    {"lpf", no_argument, NULL, OPT_LPF},
+    {"suffix", no_argument, NULL, OPT_SUFFIX},
+    {"input", no_argument, NULL, OPT_INPUT},
+    {"benchmark",  no_argument, NULL, OPT_BENCHMARK},
+    {"validate",  no_argument, NULL, OPT_VALIDATE},
+    {"size", required_argument, NULL, OPT_SIZE},
+    {"asize", required_argument, NULL, OPT_ASIZE},
+    {"tries", required_argument, NULL, OPT_TRIES},
+    {"fast", no_argument, NULL, OPT_FAST},
+    {"qsort", no_argument, NULL, OPT_QSORT},
+    {"naive", no_argument, NULL, OPT_NAIVE},
+    {"random", no_argument, NULL, OPT_RANDOM},
+    {"fibonacci", no_argument, NULL, OPT_FIBONACCI},
+    {"no-output", no_argument, NULL, OPT_NO_OUTPUT},
+    {NULL, 0, NULL, 0} // End marker
+};
+
 void print_help() {
-    printf("Usage: ./lpf [OPTIONS] [PARAMETERS]\n\n");
+    printf("Usage: ./lpf [MODE|h] [<ALGORITHM>] [<PARAMETERS>]\n\n");
 
     printf("Options:\n");
-    printf("  -h, --help                       Display this help message\n");
-    printf("  -l, --lpf [--no-output]          Calculate the LPF array; --no-output suppresses printing\n");
-    printf("  -s, --suffix [--no-output]       Calculate the suffix and LCP arrays; --no-output suppresses printing\n");
-    printf("  -v, --validate <s|l><r|f> <len> <tries> [<asize>]\n");
-    printf("                                   Validate LPF or suffix arrays against naive (probably correct) method\n");
-    printf("                                   s = suffix array, l = LPF; r = random, f = fibonacci\n");
-    printf("                                   <asize> is required only for random strings\n");
-    printf("  -b, --benchmark <s|l><r|f> <fast|qsort|naive> <len> <tries> [<asize>] [-o <file>]\n");
-    printf("                                   Benchmark LPF or suffix arrays\n");
-    printf("                                   s = suffix array, l = LPF; r = random, f = fibonacci\n");
-    printf("                                   Algorithm options:\n");
-    printf("                                     fast   - benchmark optimized implementation\n");
-    printf("                                     qsort  - benchmark the qsort implementation\n");
-    printf("                                     naive  - benchmark naive implementation\n");
-    printf("                                   <asize> is required only for random strings; -o <file> to save results\n\n");
+    printf("  -h, --help                Display this help message\n\n");
+
+    printf("MODE:\n");
+    printf("  -i, --input <ALGORITHM> [--no-output]\n");
+    printf("                            Run the specified algorithm from input\n");    
+    printf("  -b, --benchmark <ALGORITHM> <STR_TYPE> <tries> [-o <file>]\n");    
+    printf("                            Benchmark LPF or suffix arrays (save output with -o)\n");
+    printf("  -v, --validate <ALGORITHM> <STR_TYPE> <tries>\n");
+    printf("                            Validate LPF or suffix arrays against naive (probably correct) method\n\n");
+
+    printf("STR_TYPE: (default: random)\n");
+    printf("  --random <size> <asize> - Use random generated strings of length <size> and alphabet size <asize>\n");
+    printf("  --fibonacci <size>      - Use the <size>'th fibonacci string\n\n");
+    
+    printf("ALGORITHM:\n");
+    printf("  -l, --lpf [ALG_OPTS]    - Calculates the LPF array using the implementation alg_options.\n");
+    printf("  -s, --suffix [ALG_OPTS] - Calculates the suffix array using the implementation alg_options.\n\n");
+
+    printf("ALG_OPTS: (default: fast)\n");
+    printf("  --fast                  - Optimized implementation\n");
+    printf("  --qsort                 - Implementation using qsort\n");
+    printf("  --naive                 - Simplest implementation\n\n");
 
     printf("Examples:\n");
-    printf("  ./lpf -s\n");
-    printf("      Calculate suffix and LCP arrays\n\n");
-    printf("  ./lpf -l\n");
-    printf("      Calculate LPF array and print to console\n\n");
-    printf("  ./lpf -l --no-output\n");
-    printf("      Calculate LPF array without printing (useful for very large strings)\n\n");
-    printf("  ./lpf -v lf 10 1\n");
-    printf("      Validate LPF arrays on the 10th Fibonacci word (alphabet size implied = 2)\n\n");
-    printf("  ./lpf -v sr 10000 5 4\n");
-    printf("      Validate suffix arrays on random words of length 10000, 5 times, alphabet size 4\n\n");
-    printf("  ./lpf -b sr fast 10000 10 4 -o benchmark.csv\n");
+    printf("  ./lpf -i -s --qsort\n");
+    printf("      Calculate suffix from input using the qsort implementation\n\n");
+    printf("  ./lpf -i -l --no-output\n");
+    printf("      Calculate the optimized LPF array and suppress any output\n\n");
+    printf("  ./lpf -v -l --size 1000000 --tries 10 --asize 26\n");
+    printf("      Validate LPF arrays on random strings of length 1M, 10 times and alphabet size = 26\n\n");
+    printf("  ./lpf -v -s -fibonacci --size 30 --tries 5\n");
+    printf("      Validate suffix arrays on the 30th fibonacci string, 5 times\n\n");
+    printf("  ./lpf -b -l --random --fast --size 10000 --tries 10 --asize 4 -o benchmark.csv\n");
     printf("      Benchmark suffix arrays on random words of length 10000, 10 times, alphabet size 4, save to file\n");
 }
 
 
-void suffix_array_from_input() { 
-    char *input = NULL;
-    size_t input_length = 0;
-    ssize_t nread;
-    int str_len;
-    printf("Enter a string: ");
-    if ((nread = getdelim(&input, &input_length, '\n', stdin)) != -1) {
-        // Remove delimiter
-        input[strcspn(input, "\n")] = '\0';
-        str_len = nread-1;
-        printf("Retrieved line of length %d\n", str_len);
-        LOG_FUNC(fwrite, input, nread, 1, stdout);
-    } else {
-        exit(1);
-    }  
-    printf("\n");
+void suffix_array_from_input(int no_output) { 
+    int *str;
+    
+    int len = read_array_from_stdin(&str, no_output);
 
-    // Expand character string to int type this puts a limit
-    int *str = malloc(sizeof(int)*(str_len+ADDITIONAL_PADDING));
+    int *sa = suffix_array(str, len);
+    int *sar = reverse_array(sa,  len);
+    int *lcp = lcp_array(str, sa, sar, len);
 
-    for (int i = 0; i < str_len; i++) {
-        str[i] = (int)input[i];
+    if (!no_output) {
+        print_suffix_array_summary(str, sa, lcp, len);
     }
-    for (int i = str_len; i < str_len+ADDITIONAL_PADDING; i++) {
-        str[i] = 0;
-    }
-    free(input);
 
-    int *sa = suffix_array(str, str_len);
-    int *sar = reverse_array(sa,  str_len);
-    int *lcp = lcp_array(str, sa, sar, str_len);
-
-    // int *saq = suffix_array_qsort(str, str_len);
-    // printf_line(saq, str_len);
-
-    print_suffix_array(str, sa, str_len);
-
-    printf("SA:  ");
-    printf_array(sa, str_len);
-
-    printf("LCP: ");
-    printf_array(lcp+1, str_len-1);
-    printf("\n");
     free(sa);
     free(sar);
     free(str);
     free(lcp);
 }
 
-void lpf_array_from_input() {
-    char *input = NULL;
-    size_t input_length = 0;
-    ssize_t nread;
-    int str_len;
-    printf("Enter a string: ");
-    if ((nread = getdelim(&input, &input_length, '\n', stdin)) != -1) {
-        // Remove delimiter
-        input[strcspn(input, "\n")] = '\0';
-        str_len = nread-1;
-        printf("Retrieved line of length %d\n", str_len);
-        LOG_FUNC(fwrite, input, nread, 1, stdout);
-    } else {
-        exit(1);
-    }  
-    printf("\n");
+void lpf_array_from_input(int no_output) {
+    int *str;
 
-    // Expand character string to int type this puts a limit
-    int *str = malloc(sizeof(int)*(str_len+ADDITIONAL_PADDING));
+    int len = read_array_from_stdin(&str, no_output);
 
-    for (int i = 0; i < str_len; i++) {
-        str[i] = (int)input[i];
+    int *lpf = lpf_array(str, len);
+
+    if (!no_output) {
+        print_lpf_array_summary(str, lpf, len);
     }
-    for (int i = str_len; i < str_len+ADDITIONAL_PADDING; i++) {
-        str[i] = 0;
-    }
-    free(input);
-
-    int *lpf = lpf_array(str, str_len);
-
-    printf("LPF = ");
-    printf_array(lpf, str_len);
-
-    print_lpf_array(str, lpf, str_len);
 
     free(str);
     free(lpf);
 }
 
+void run_validation(Options config) {
+    switch (config.alg) {
+        case LPF:
+            validate_lpf(config.size, config.tries, config.asize);
+            return;
+        case SUFFIX_ARRAY:
+            validate_suffix_array(config.size, config.tries, config.asize);
+            return;
+        default:
+            validate_lpf(config.size, config.tries, config.asize);
+    } 
+}
+
+void run_program(Options config) {
+    switch(config.mode) {
+        case INPUT:
+            switch (config.alg) {
+                case LPF:
+                    lpf_array_from_input(config.no_output);
+                    break;
+                case SUFFIX_ARRAY:
+                    suffix_array_from_input(config.no_output);
+                    break;
+            }
+            return;
+        case BENCHMARK:
+            benchmark_runner(config);
+            return;
+        case VALIDATE:
+            run_validation(config);
+            return;
+    }
+}
  
 int main(int argc, char *argv[]) {
-    int size, tries, asize, str_type_arg;
-    char alg_type_arg;
-    StrType str_type = RANDOM;
-    const char *short_opts = "hb:sv:l";
-    const struct option long_opts[] = {
-        {"help",    no_argument,       NULL, 'h'},
-        {"lpf", no_argument, NULL, 'l'},
-        {"suffix", no_argument, NULL, 's'},
-        {"benchmark",  required_argument, NULL, 'b'},
-        {"validate",  required_argument, NULL, 'v'},
-        {NULL, 0, NULL, 0} // End marker
-    };
     int opt;
+    Options config = {0};
 
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
         switch (opt) {
-            case 'h':
+            case OPT_HELP:
                 print_help();
-                return 0;
-            case 's':
-                suffix_array_from_input();
-                return 0;
-            case 'l':
-                lpf_array_from_input();
-                return 0;
-            case 'b':
-                alg_type_arg = argv[optind-1][0];
-                str_type_arg = argv[optind-1][1];
-                size = atoi(argv[optind]);
-                tries = atoi(argv[optind+1]);
-                asize = atoi(argv[optind+2]);
-
-                switch (str_type_arg) {
-                    case 'r':
-                        str_type = RANDOM;
-                        break;
-                    case 'f':
-                        str_type = FIBONACCI;
-                        break;
-                    default:
-                        str_type = RANDOM;
-                }
-
-                switch (alg_type_arg) {
-                    case 's':
-                        benchmark_runner(SUFFIX_ARRAY, str_type, size, tries, asize);
-                        return 0;
-                    case 'l':
-                        benchmark_runner(LPF, str_type, size, tries, asize);
-                        return 0;
-                    default:
-                        benchmark_runner(LPF, str_type, size, tries, asize);
-                }
-                return 0;
-            case 'v':
-                alg_type_arg = argv[optind-1][0]; 
-                size = atoi(argv[optind]);
-                tries = atoi(argv[optind+1]);
-                asize = atoi(argv[optind+2]);
-                if (alg_type_arg == 's') {
-                    validate_suffix_array(size, tries, asize);
-                } else {
-                    validate_lpf(size, tries, asize);
-                }
-                return 0;
+                exit(0);
+            case OPT_SUFFIX:
+                config.alg = SUFFIX_ARRAY;
+                break;
+            case OPT_LPF:
+                config.alg = LPF;
+                break;
+            case OPT_BENCHMARK:
+                config.mode = BENCHMARK;
+                break;
+            case OPT_VALIDATE:
+                config.mode = VALIDATE;
+                break;
+            case OPT_INPUT:
+                config.mode = INPUT;
+                break;
+            case OPT_SIZE:
+                config.size = atoi(optarg);
+                break;
+            case OPT_TRIES:
+                config.tries = atoi(optarg);
+                break;
+            case OPT_ASIZE:
+                config.asize = atoi(optarg);
+                break;
+            case OPT_RANDOM:
+                config.str_type = RANDOM;
+                break;
+            case OPT_FIBONACCI:
+                config.str_type = FIBONACCI;
+                break;
+            case OPT_FAST:
+                config.alg_impl = FAST;
+                break;
+            case OPT_QSORT:
+                config.alg_impl = QSORT;
+                break;
+            case OPT_NAIVE:
+                config.alg_impl = NAIVE;
+                break;
+            case OPT_NO_OUTPUT:
+                config.no_output = 1;
+                break;
             case '?':
                 print_help();
                 return 0;
@@ -223,8 +211,11 @@ int main(int argc, char *argv[]) {
             printf("%s ", argv[optind++]);
         }
         printf("\n");
-        return 1;
+        exit(1);
     }
+
+    run_program(config);
+
     return 0;
 }
 

@@ -1,3 +1,4 @@
+#include "util.h"
 #include "tuple.h"
 #include "radix.h"
 #include "constants.h"
@@ -248,4 +249,12 @@ void print_suffix_array(int *str, int *sa, int len) {
         fwrite(str + pos,  sizeof(int), len - pos,stdout);
         printf("\n");
     }
+}
+
+void print_suffix_array_summary(int *str, int *sa, int *lcp, int len) {
+    printf("SA:  ");
+    printf_array(sa, len);
+    printf("LCP: ");
+    printf_array(lcp+1, len-1);
+    print_suffix_array(str, sa, len);
 }

@@ -147,3 +147,34 @@ int *lpf_array_naive(int *str, int str_len) {
 
     return lpf;
 }
+
+void print_lpf_array(int *str, int *lpf, int len) {
+    int j, k; 
+
+    for (int i = 0; i < len; i++) {
+        k = lpf[i];
+        printf("LPF[%d] = %d\t", i, lpf[i]);
+        
+        if (k > 0) {
+            printf_line(str, i, " ");
+            printf_line(str+i, k, " ");
+            printf_line(str+i+k, len - i - k, "\t");
+
+            j = find_prev(str, i, k);
+        
+            printf_line(str, j, " ");
+            printf_line(str+j, k, " ");
+            printf_line(str+j+k, len - j - k, "\n");
+        } else {
+            printf_line(str, i, " ");
+            printf_line(str+i, 1, " ");
+            printf_line(str+i+1, len - i - 1, "\n");
+        }
+    }
+}
+
+void print_lpf_array_summary(int *str, int *lpf, int len) {
+    printf("LPF = ");
+    printf_array(lpf, len);
+    print_lpf_array(str, lpf, len);
+}

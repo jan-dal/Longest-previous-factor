@@ -11,5 +11,7 @@ typedef struct binode binode;
 
 int *lpf_array(int *str, int str_len);
 int *lpf_array_naive(int *str, int str_len);
+void print_lpf_array(int *str, int *lpf, int len);
+void print_lpf_array_summary(int *str, int *lpf, int len);
 
 #endif

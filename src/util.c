@@ -17,31 +17,6 @@ int find_prev(int *str, int i, int k) {
     return 0;
 }
 
-void print_lpf_array(int *str, int *lpf, int len) {
-    int j, k; 
-
-    for (int i = 0; i < len; i++) {
-        k = lpf[i];
-        printf("LPF[%d] = %d\t", i, lpf[i]);
-        
-        if (k > 0) {
-            printf_line(str, i, " ");
-            printf_line(str+i, k, " ");
-            printf_line(str+i+k, len - i - k, "\t");
-
-            j = find_prev(str, i, k);
-        
-            printf_line(str, j, " ");
-            printf_line(str+j, k, " ");
-            printf_line(str+j+k, len - j - k, "\n");
-        } else {
-            printf_line(str, i, " ");
-            printf_line(str+i, 1, " ");
-            printf_line(str+i+1, len - i - 1, "\n");
-        }
-    }
-}
-
 void print_tuple_info(tuple_info *tinfo) {
     int *tmp = malloc(sizeof(int) * tinfo->total_blocks);
     for (int i = 0; i < tinfo->total_blocks; i++) {
@@ -102,18 +77,15 @@ void printf_line(int *str, int str_len, char *delim) {
     }
 }
 
-int *random_str(int *str, int str_len, int asize) {
+int *random_str(int *str, int len, int asize) {
     if (str == NULL) {
-        str = malloc((str_len + ADDITIONAL_PADDING) * sizeof(int));
+        str = calloc(len + ADDITIONAL_PADDING, sizeof(int));
     }
  
     srand((unsigned int)time(NULL));
 
-    for (int i = 0; i < str_len; i++) {
+    for (int i = 0; i < len; i++) {
         str[i] = (rand() % asize) + 97;
-    }
-    for (int j = str_len; j < str_len + ADDITIONAL_PADDING; j++) {
-        str[j] = 0;
     }
     return str;
 }
@@ -212,3 +184,34 @@ int *fib_str(int *str, int n) {
     return str;
 } 
 
+int read_array_from_stdin(int **str, int no_output) {
+    char *input = NULL;
+    size_t cap = 0;
+    int len;
+
+    ssize_t nread = getdelim(&input, &cap, '\n', stdin);
+    if (nread == -1) {
+        fprintf(stderr, "Error: failed to read input\n");
+        free(input);
+        exit(EXIT_FAILURE);
+    }
+
+    // Remove trailing newline
+    input[strcspn(input, "\n")] = '\0';
+    len = nread-1;
+
+    if (!no_output) {
+        printf("Retrieved line of length %d\n\n", len);
+    }
+    LOG_FUNC(fwrite, input, nread, 1, stdout);
+
+    // Convert to integer array
+    *str = calloc(len + ADDITIONAL_PADDING, sizeof(int));
+    for (int i = 0; i < len; i++) {
+        (*str)[i] = (unsigned char)input[i];
+    }
+
+    free(input);
+
+    return len;
+}

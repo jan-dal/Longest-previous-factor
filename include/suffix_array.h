@@ -12,5 +12,6 @@ int *_create_str(int *str, int *positions, int len, int a);
 
 void print_suffix(int *str, int str_len, int pos);
 void print_suffix_array(int *str, int *sa, int len);
+void print_suffix_array_summary(int *str, int *sa, int *lcp, int len);
 
 #endif

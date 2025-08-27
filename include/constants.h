@@ -22,20 +22,62 @@
     #define LOG_FUNC(...)
 #endif
 
-#define SEC_TO_NANO(sec) (long long)(1e9 * sec)
+#define NANO_TO_SEC(nano) (double)(nano / 1e9)
+
+enum Mode {
+    INPUT,
+    BENCHMARK,
+    VALIDATE,
+};
+typedef enum Mode Mode;
+
+enum Cli_opts {
+    OPT_HELP      = 'h',
+    OPT_LPF       = 'l',
+    OPT_SUFFIX    = 's',
+    OPT_BENCHMARK = 'b',
+    OPT_INPUT     = 'i',
+    OPT_VALIDATE  = 'v',
+    OPT_SIZE,
+    OPT_ASIZE,
+    OPT_TRIES,
+    OPT_FAST,
+    OPT_QSORT,
+    OPT_NAIVE,
+    OPT_RANDOM,
+    OPT_FIBONACCI,
+    OPT_NO_OUTPUT,
+};
 
 enum Algorithm {
     SUFFIX_ARRAY,
-    LCP,
     LPF,
 };
 typedef enum Algorithm Algorithm;
+
+enum Algorithm_impl {
+    FAST,
+    QSORT,
+    NAIVE,
+};
+typedef enum Algorithm_impl Algorithm_impl;
 
 enum StrType {
     RANDOM,
     FIBONACCI,
 };
 typedef enum StrType StrType;
+
+typedef struct {
+    Mode mode;
+    Algorithm alg;
+    Algorithm_impl alg_impl;
+    StrType str_type;
+    int size;
+    int tries;
+    int asize;
+    int no_output;
+} Options;
 
 struct tuple_info {
     int *positions;
