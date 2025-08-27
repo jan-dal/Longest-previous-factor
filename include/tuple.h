@@ -1,7 +1,18 @@
-#include "constants.h"
-
 #ifndef TUPLE_H
 #define TUPLE_H
+
+#define TUPLE_SIZE 3
+
+struct tuple_info {
+    int *positions;
+    int *tuple_sorting;
+    int *tuple_type;
+    int (*values)[TUPLE_SIZE];
+    int max_val;
+    int total_blocks;
+    int max_name;
+};
+typedef struct tuple_info tuple_info;
 
 int *name_tuples(tuple_info *tinfo);
 void cleanup_tinfo(tuple_info *tinfo);

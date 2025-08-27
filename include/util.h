@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "tuple.h"
 #include <stdio.h>
 
 #ifndef UTIL_H

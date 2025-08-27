@@ -63,12 +63,16 @@ tuple_info *str_to_tuples(int *str, int str_len) {
     tinfo->values = malloc(tinfo->total_blocks * sizeof(*tinfo->values));
     tinfo->tuple_sorting = NULL;
 
-    int k = 0, i = 1;
+    int k = 0, i = 1, max_val = 0, val;
     while(i < str_len + extra_block) {
         tinfo->positions[k] = i;
         tinfo->tuple_type[k] = 1;
         for (int q = 0; q < TUPLE_SIZE; q++) {
+            val = str[i+q];
             tinfo->values[k][q] = str[i+q];
+            if (val > max_val) {
+                max_val = val;
+            }
         }
         k++;
         i += 3;
@@ -79,11 +83,17 @@ tuple_info *str_to_tuples(int *str, int str_len) {
         tinfo->positions[k] = i;
         tinfo->tuple_type[k] = 2;
         for (int q = 0; q < TUPLE_SIZE; q++) {
-            tinfo->values[k][q] = str[i+q];
+            val = str[i+q];
+            tinfo->values[k][q] = val;
+            if (val > max_val) {
+                max_val = val;
+            }
         }
         k++;
         i += 3;
     }
+    tinfo->max_val = max_val;
+    
     LOG_MESSAGE("Allocated %d tuples.\n", tinfo->total_blocks);
     return tinfo;
 }
@@ -116,14 +126,20 @@ tuple_info *create_t0_ordered(tuple_info *tinfo12, int *str, int str_len) {
     tinfo0->tuple_type = NULL;
     tinfo0->tuple_sorting = NULL;
 
+    int max_val = 0, val;
     int k = 0;
     for (int i = 0; i < tinfo12->total_blocks; i++) {
         int pos = tinfo12->positions[i];
         if (tinfo12->tuple_type[i] == 1) {
             tinfo0->positions[k] = pos - 1;
-            tinfo0->values[k++][TUPLE_SIZE-1] = str[pos - 1];
+            val = str[pos - 1];
+            tinfo0->values[k++][TUPLE_SIZE-1] = val;
+            if (val > max_val) {
+                max_val = val;
+            }
         }
     }
+    tinfo0->max_val = max_val;
     
     LOG_MESSAGE("t0 created\n");
     return tinfo0;

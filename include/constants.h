@@ -5,7 +5,6 @@
 #define DIV 3
 
 #define MIN_LEN 127
-#define TUPLE_SIZE 3
 #define ADDITIONAL_PADDING 3
 #define DEBUG 0
 
@@ -78,16 +77,6 @@ typedef struct {
     int asize;
     int no_output;
 } Options;
-
-struct tuple_info {
-    int *positions;
-    int *tuple_sorting;
-    int *tuple_type;
-    int (*values)[TUPLE_SIZE];
-    int total_blocks;
-    int max_name;
-};
-typedef struct tuple_info tuple_info;
 
 struct DataFrame {
     char *header;

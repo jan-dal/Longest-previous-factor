@@ -23,7 +23,7 @@ void print_tuple_info(tuple_info *tinfo) {
         tmp[tinfo->tuple_sorting[i]] = i;
     }
     
-    printf("TUPLES:\nNumber of all blocks: %d\nPOS\t|\tTYPE\t|\tSORTING\t|\tVALUES\n", tinfo->total_blocks);
+    printf("TUPLES:\nNumber of all blocks: %d\nPOS\t|\tTYPE\t|\tSORTING\t|\tVALUES\t|\n", tinfo->total_blocks);
     for (int i=0; i < tinfo->total_blocks; i++) {
         printf("%d\t|\t%d\t|\t%d\t|\t%d\t|\t", tinfo->positions[i], tinfo->tuple_type[i], tinfo->tuple_sorting[i], tmp[i]);
 

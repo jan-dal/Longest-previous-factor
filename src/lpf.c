@@ -83,9 +83,9 @@ int *lpf_array(int *str, int str_len) {
 
     LOG_FUNC(print_suffix_array, str, sa, str_len);
 
-    LOG_FUNC(printf_line, sa, str_len);
-    LOG_FUNC(printf_line, sar, str_len);
-    LOG_FUNC(printf_line, lcp, str_len);
+    LOG_FUNC(printf_line, sa, str_len, "\n");
+    LOG_FUNC(printf_line, sar, str_len, "\n");
+    LOG_FUNC(printf_line, lcp, str_len, "\n");
 
     // print_suffix_array(str, sa, str_len);
     // printf_array(lcp, str_len);

@@ -1,12 +1,10 @@
 #include "lpf.h"
 #include "lcp.h"
 #include "util.h"
-#include "tuple.h"
 #include "constants.h"
 #include "benchmark.h"
 #include "suffix_array.h"
 
-#include <bits/getopt_core.h>
 #include <getopt.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -207,6 +205,7 @@ int main(int argc, char *argv[]) {
     }
     if (argc == 1) {
         print_help();
+        exit(0);
     }
 
     if (optind < argc) {

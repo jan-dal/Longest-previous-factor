@@ -32,7 +32,7 @@
 **/
 int *suffix_array(int *str, int str_len) {
     LOG_MESSAGE("Calculating suffix array for:\n"); 
-    LOG_FUNC(printf_line, str, str_len);
+    LOG_FUNC(printf_line, str, str_len, "\n");
 
     // printf("Input string lenght: %d\n", str_len);
     // printf_line(str, str_len);
@@ -41,7 +41,7 @@ int *suffix_array(int *str, int str_len) {
     tinfo12->tuple_sorting = radix_sort(tinfo12, TUPLE_SIZE);
     int *tuple_names = name_tuples(tinfo12);
  
-    LOG_FUNC(printf_line, tuple_names, tinfo12->total_blocks);
+    LOG_FUNC(printf_line, tuple_names, tinfo12->total_blocks, "\n");
 
     LOG_MESSAGE("T12 info before reordering:\n");
     LOG_FUNC(print_tuple_info, tinfo12);
@@ -57,7 +57,14 @@ int *suffix_array(int *str, int str_len) {
     tinfo12->tuple_type = reorder(tinfo12->tuple_type, tinfo12->tuple_sorting, tinfo12->total_blocks);
 
     tuple_info *tinfo0 = create_t0_ordered(tinfo12, str, str_len);
-    int *sorting0 = counting_sort(tinfo0->values, NULL, str_len > MIN_LEN ? str_len : MIN_LEN, tinfo0->total_blocks, TUPLE_SIZE-1);
+
+    int max_val = tinfo0->max_val > MIN_LEN ? tinfo0->max_val : MIN_LEN;
+    max_val++;
+    int *sorting0 = calloc(tinfo0->total_blocks, sizeof(int));
+    int *count = calloc(max_val, sizeof(int));
+    counting_sort(tinfo0->values, max_val, count, sorting0, NULL, tinfo0->total_blocks, TUPLE_SIZE-1);
+    free(count);
+    
     tinfo0->tuple_sorting = sorting0;
     tinfo0->positions = reorder(tinfo0->positions, tinfo0->tuple_sorting, tinfo0->total_blocks);
 
@@ -70,7 +77,7 @@ int *suffix_array(int *str, int str_len) {
     int *sa = merge(str, str_len, tinfo0, tinfo12);
 
     LOG_MESSAGE("Calculated suffix array:\n");
-    LOG_FUNC(printf_line, sa, str_len); 
+    LOG_FUNC(printf_line, sa, str_len, "\n"); 
 
     cleanup_tinfo(tinfo0);
     cleanup_tinfo(tinfo12);
@@ -123,9 +130,9 @@ int *merge(int *str, int str_len, tuple_info *tinfo0, tuple_info *tinfo12) {
 
         LOG_MESSAGE("Comparing: \n");
         LOG_MESSAGE("%d: ", pos_0);
-        LOG_FUNC(printf_line, str+pos_0, str_len-pos_0);
+        LOG_FUNC(printf_line, str+pos_0, str_len-pos_0, "\n");
         LOG_MESSAGE("%d: ", pos_12);
-        LOG_FUNC(printf_line, str+pos_12, str_len-pos_12);
+        LOG_FUNC(printf_line, str+pos_12, str_len-pos_12, "\n");
         LOG_MESSAGE("\n");
  
         if (tinfo12->tuple_type[i12] == 1) {

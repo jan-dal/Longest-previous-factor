@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O3 -Iinclude
-DFLAGS = -pg -O0 -Iinclude
+CFLAGS = -g -Wall -Wextra -O3 -Iinclude
+DFLAGS = -g -O0 -Iinclude
 
 TARGET = lpf
 DTARGET = lpf_debug
