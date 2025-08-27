@@ -11,9 +11,10 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-static const char *short_opts = "ihbsvl";
+static const char *short_opts = "io:hbsvl";
 static const struct option long_opts[] = {
     {"help",    no_argument,       NULL, OPT_HELP},
     {"lpf", no_argument, NULL, OPT_LPF},
@@ -193,6 +194,9 @@ int main(int argc, char *argv[]) {
             case OPT_NO_OUTPUT:
                 config.no_output = 1;
                 break;
+            case OPT_OUTPUT:
+                config.out_file = strdup(optarg);
+                break;
             case '?':
                 print_help();
                 return 0;
@@ -215,7 +219,8 @@ int main(int argc, char *argv[]) {
     }
 
     run_program(config);
-
+    
+    free(config.out_file);
     return 0;
 }
 

@@ -9,13 +9,13 @@ void printf_line(int *str, int str_len, char *delim);
 void print_lpf_array(int *str, int *lpf, int len);
 void print_tuple_info(tuple_info *tinfo);
 void printf_array(int *str, int str_len);
-void write_to_csv(data_frame *data, FILE *file);
-void cleanup_data(data_frame *data);
+void write_to_csv(DataFrame *data, FILE *file);
+void cleanup_data(DataFrame *data);
 int *random_str(int *str, int str_len, int asize);
 int *fib_str(int *str, int n);
 int find_prev(int *str, int i, int k);
 int read_array_from_stdin(int **str, int no_output);
 int fibonacci(int n);
-data_frame *create_data_frame(int datapoints, char *filename, char *header);
+DataFrame *create_data_frame(int datapoints, char *filename, char *header);
 
 #endif

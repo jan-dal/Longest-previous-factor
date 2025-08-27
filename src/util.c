@@ -108,7 +108,7 @@ int file_has_line(char *filename) {
     return has_line;
 }
 
-void write_to_csv(data_frame *data, FILE *file) {
+void write_to_csv(DataFrame *data, FILE *file) {
     if (!file_has_line(data->filename)) {
         if (fprintf(file, "%s\n", data->header) < 0) {
                 perror("Error writing header to file");
@@ -127,7 +127,7 @@ void write_to_csv(data_frame *data, FILE *file) {
     }
 }
 
-void cleanup_data(data_frame *data) {
+void cleanup_data(DataFrame *data) {
     for (int i = 0; i < data->datapoints; i++) {
         free(data->data[i]);
     } 
@@ -135,8 +135,8 @@ void cleanup_data(data_frame *data) {
     free(data);
 }
 
-data_frame *create_data_frame(int datapoints, char *filename, char *header) {
-    data_frame *data = malloc(sizeof(data_frame));
+DataFrame *create_data_frame(int datapoints, char *filename, char *header) {
+    DataFrame *data = malloc(sizeof(DataFrame));
     data->data = malloc(datapoints * sizeof(long long*));
     data->datapoints = datapoints;
 

@@ -64,9 +64,6 @@ void validate_suffix_array(int str_len, int tries, int asize) {
         }
         if (bug) {
             printf_array(str, str_len);
-        // print_suffix_array(str, sa1, str_len);
-        // printf("\n");
-        // print_suffix_array(str, sa2, str_len);
             free(sa1);
             free(sa2);
             free(str);   
@@ -82,53 +79,57 @@ void validate_suffix_array(int str_len, int tries, int asize) {
 void benchmark_runner(Options config) {
     int *(*f)(int*, int);
     FILE *file;
-    char *filename, *header = TIME_BENCHMARK_HEADER;
+    char *header = TIME_BENCHMARK_HEADER;
 
+    printf("Running benchmark on ");
     switch (config.alg) {
         case SUFFIX_ARRAY:
-            printf("Running benchmark on suffix arrays %d times with random strings[1...%d], |∑| = %d\n", 
-                config.tries, config.size, config.asize); 
-            filename = SA_BENCH_FILENAME;
-
             if (config.alg_impl == FAST) {
+                printf("suffix arrays - fast, ");
                 f = suffix_array;
             } else if (config.alg_impl == QSORT) {
+                printf("suffix arrays - qsort, ");
                 f = suffix_array_qsort;
             } else {
+                printf("suffix arrays - fast, ");
                 f = suffix_array;
             }
             break;
         case LPF:
-            filename = LPF_BENCH_FILENAME;
-
             if (config.alg_impl == FAST) {
+                printf("lpf - fast, ");
                 f = lpf_array;
             } else if (config.alg_impl == NAIVE) {
+                printf("lpf - naive, ");
                 f = lpf_array_naive;
             } else {
+                printf("lpf - fast, ");
                 f = lpf_array;
             }
             break;
     }
+    printf("%d time%s ", config.tries, config.tries > 1 ? "s" : "");
 
-    int datapoints = 28;
-    data_frame *data = create_data_frame(datapoints, filename, header);
+    DataFrame *data = create_data_frame(config.tries, config.out_file, header);
 
-    benchmark(f, data, config, 0);
+    benchmark(f, data, config);
 
-    file = fopen(filename, "a");
-
-    if (file == NULL) {
-        perror("Error opening file");
+    if (config.out_file != NULL) {
+        file = fopen(config.out_file, "a");
+        if (file == NULL) {
+            perror("Error opening file");
+        }
+        write_to_csv(data, file);
+        fclose(file); 
     }
-    // write_to_csv(data, file);
+
     cleanup_data(data);
-    fclose(file); 
 }
 
-void benchmark(int *(*f)(int*, int), data_frame *data, Options config, int datapoint) {
+void benchmark(int *(*f)(int*, int), DataFrame *data, Options config) {
     long long nano = 0;
-    double seconds = 0;
+    long long nano_avg = 0;
+    double sec_avg = 0;
     int *str = NULL;
 
     switch (config.str_type) {
@@ -136,12 +137,10 @@ void benchmark(int *(*f)(int*, int), data_frame *data, Options config, int datap
             str = fib_str(str, config.size);
             config.size = fibonacci(config.size);
             config.asize = 2;
-            printf("Running benchmark on lpf arrays %d times with fibonacci strings[1...%d], |∑| = %d\n", 
-                    config.tries, config.size, config.asize);
+            printf("with fibonacci strings[1...%d], |∑| = %d\n", config.size, config.asize);
             break;
         case RANDOM:
-            printf("Running benchmark on lpf arrays %d times with random strings[1...%d], |∑| = %d\n", 
-                config.tries, config.size, config.asize); 
+            printf("with random strings[1...%d], |∑| = %d\n", config.size, config.asize); 
             break;
     }   
 
@@ -149,20 +148,23 @@ void benchmark(int *(*f)(int*, int), data_frame *data, Options config, int datap
         if (config.str_type == RANDOM) {
             str = random_str(str, config.size, config.asize);
         }
-        nano += timeit(f, str, config.size);
+
+        nano = timeit(f, str, config.size);
+        
+        data->data[i][0] = config.size;
+        data->data[i][1] = config.str_type;
+        data->data[i][2] = i;
+        data->data[i][3] = config.asize;
+        data->data[i][4] = nano;
+        
+        nano_avg += nano;
     }
     free(str);
 
-    nano /= config.tries;
-    seconds = NANO_TO_SEC(nano);
+    nano_avg /= config.tries;
+    sec_avg = NANO_TO_SEC(nano_avg);
 
-    data->data[datapoint][0] = config.size;
-    data->data[datapoint][1] = config.str_type;
-    data->data[datapoint][2] = config.tries;
-    data->data[datapoint][3] = config.asize;
-    data->data[datapoint][4] = nano;
-    
-    printf("%lld ns per call (%f seconds), total: %f seconds\n", nano, seconds, seconds * config.tries);
+    printf("%lld ns per call (%f seconds), total: %f seconds\n", nano_avg, sec_avg, sec_avg * config.tries);
 }
 
 long long timeit(int *(*f)(int*, int), int *str, int str_len) {

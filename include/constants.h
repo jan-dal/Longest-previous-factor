@@ -9,10 +9,8 @@
 #define ADDITIONAL_PADDING 3
 #define DEBUG 0
 
-#define CSV_HEADER_LEN 6
-#define TIME_BENCHMARK_HEADER "IN_LEN,STR_TYPE,TRIES,ALPHABET_SIZE,ALG,NALG"
-#define SA_BENCH_FILENAME "results/sa_bench_results_fib.csv"
-#define LPF_BENCH_FILENAME "results/lpf_bench_results.csv"
+#define CSV_HEADER_LEN 5
+#define TIME_BENCHMARK_HEADER "IN_LEN,STR_TYPE,TRY,ALPHABET_SIZE,ALG(NS)"
 
 #if DEBUG
     #define LOG_MESSAGE(...) printf(__VA_ARGS__)
@@ -37,6 +35,7 @@ enum Cli_opts {
     OPT_SUFFIX    = 's',
     OPT_BENCHMARK = 'b',
     OPT_INPUT     = 'i',
+    OPT_OUTPUT    = 'o',
     OPT_VALIDATE  = 'v',
     OPT_SIZE,
     OPT_ASIZE,
@@ -73,6 +72,7 @@ typedef struct {
     Algorithm alg;
     Algorithm_impl alg_impl;
     StrType str_type;
+    char *out_file;
     int size;
     int tries;
     int asize;
@@ -89,13 +89,13 @@ struct tuple_info {
 };
 typedef struct tuple_info tuple_info;
 
-struct data_frame {
+struct DataFrame {
     char *header;
     char *filename;
     long long **data;
     int datapoints;
     int header_len;
 };
-typedef struct data_frame data_frame;
+typedef struct DataFrame DataFrame;
 
 #endif
